@@ -4,8 +4,14 @@ import pandas as pd
 import ezdxf
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 from io import BytesIO
 from math import atan2, degrees, sqrt, cos, sin, tan, radians, pi
+from matplotlib.patches import Rectangle, Polygon, FancyArrow
+
+# Import custom modules
+from abutment_design import AbutmentDesign
+from approach_slab_design import ApproachSlabDesign
 
 # Configure the page
 st.set_page_config(
@@ -376,9 +382,173 @@ class EnhancedBridgeDrawer:
         """Save the DXF file"""
         self.doc.saveas(filename)
 
+class EnhancedBridgeGAD:
+    def __init__(self):
+        self.bridge_params = {}
+        self.abutment_params = {}
+        self.approach_slab_params = {}
+    
+    def generate_complete_drawings(self):
+        """Generate complete bridge drawings with all components"""
+        # Create figure with subplots
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 16))
+        
+        # Plan view
+        self.draw_plan_view(ax1)
+        
+        # Sectional elevation
+        self.draw_sectional_elevation(ax2)
+        
+        # Abutment details
+        self.draw_abutment_details(ax3)
+        
+        # Approach slab details
+        self.draw_approach_slab_details(ax4)
+        
+        plt.tight_layout()
+        return fig
+    
+    def draw_plan_view(self, ax):
+        """Draw plan view of the bridge"""
+        # Bridge deck
+        deck = Rectangle((2, 4), 8, 0.5, angle=0, facecolor='lightgray', edgecolor='black', linewidth=2)
+        ax.add_patch(deck)
+        
+        # Add dimensions and labels
+        ax.set_xlim(0, 12)
+        ax.set_ylim(0, 8)
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+        ax.set_title('Plan View')
+        ax.set_xlabel('Length (m)')
+        ax.set_ylabel('Width (m)')
+    
+    def draw_sectional_elevation(self, ax):
+        """Draw sectional elevation view"""
+        # Bridge deck
+        deck = Rectangle((2, 4), 8, 0.5, facecolor='lightgray', edgecolor='black', linewidth=2)
+        ax.add_patch(deck)
+        
+        # Abutments
+        abutment_height = self.abutment_params.get('height', 3.5)
+        left_abutment = Rectangle((1.5, 1), 0.5, abutment_height, facecolor='darkgray', edgecolor='black', linewidth=2)
+        right_abutment = Rectangle((10, 1), 0.5, abutment_height, facecolor='darkgray', edgecolor='black', linewidth=2)
+        ax.add_patch(left_abutment)
+        ax.add_patch(right_abutment)
+        
+        # Approach slabs
+        approach_length = self.approach_slab_params.get('length', 3.0)
+        left_approach = Rectangle((1.5 - approach_length, 4), approach_length, 0.3, facecolor='lightblue', edgecolor='black', linewidth=1)
+        right_approach = Rectangle((10.5, 4), approach_length, 0.3, facecolor='lightblue', edgecolor='black', linewidth=1)
+        ax.add_patch(left_approach)
+        ax.add_patch(right_approach)
+        
+        # Piers/supports
+        pier_left = Rectangle((4, 1), 0.5, 3, facecolor='gray', edgecolor='black', linewidth=1)
+        pier_right = Rectangle((7.5, 1), 0.5, 3, facecolor='gray', edgecolor='black', linewidth=1)
+        ax.add_patch(pier_left)
+        ax.add_patch(pier_right)
+        
+        # Ground level
+        ground = Rectangle((0, 0), 12, 1, facecolor='brown', alpha=0.3)
+        ax.add_patch(ground)
+        
+        # Dimensions and labels
+        ax.annotate('', xy=(2, 5.5), xytext=(10, 5.5), arrowprops=dict(arrowstyle='<->', color='red', lw=2))
+        ax.text(6, 5.7, '8.0m', fontsize=10, ha='center', color='red')
+        
+        ax.set_xlim(-0.5, 12.5)
+        ax.set_ylim(-0.5, 6)
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+        ax.set_title('Sectional Elevation')
+        ax.set_xlabel('Length (m)')
+        ax.set_ylabel('Height (m)')
+    
+    def draw_abutment_details(self, ax):
+        """Draw detailed abutment design"""
+        # Abutment body
+        abutment_body = Rectangle((1, 1), 2, 3, facecolor='lightgray', edgecolor='black', linewidth=2)
+        ax.add_patch(abutment_body)
+        
+        # Foundation
+        foundation = Rectangle((0.5, 0.5), 3, 0.5, facecolor='darkgray', edgecolor='black', linewidth=2)
+        ax.add_patch(foundation)
+        
+        # Wing walls
+        wing_left = Polygon([(0.5, 1), (1, 1), (1, 3), (0.5, 3.5)], facecolor='gray', edgecolor='black', linewidth=1)
+        wing_right = Polygon([(3, 1), (3.5, 1), (3.5, 3.5), (3, 3)], facecolor='gray', edgecolor='black', linewidth=1)
+        ax.add_patch(wing_left)
+        ax.add_patch(wing_right)
+        
+        # Reinforcement details (simplified)
+        for i in range(1, 4):
+            ax.plot([1.2, 2.8], [i + 0.5, i + 0.5], 'r-', linewidth=2, alpha=0.7)
+        
+        for i in range(1, 3):
+            ax.plot([1.2 + i * 0.4, 1.2 + i * 0.4], [1.2, 3.8], 'r-', linewidth=2, alpha=0.7)
+        
+        ax.set_xlim(0, 4)
+        ax.set_ylim(0, 4.5)
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+        ax.set_title('Abutment Details')
+        ax.set_xlabel('Width (m)')
+        ax.set_ylabel('Height (m)')
+    
+    def draw_approach_slab_details(self, ax):
+        """Draw approach slab reinforcement details"""
+        # Approach slab
+        slab = Rectangle((0, 2), 4, 0.3, facecolor='lightblue', edgecolor='black', linewidth=2)
+        ax.add_patch(slab)
+        
+        # Reinforcement - longitudinal bars
+        for i in range(5):
+            y_pos = 2.05 + i * 0.05
+            ax.plot([0.2, 3.8], [y_pos, y_pos], 'r-', linewidth=2, alpha=0.8)
+        
+        # Reinforcement - transverse bars
+        for i in range(8):
+            x_pos = 0.2 + i * 0.5
+            ax.plot([x_pos, x_pos], [2.05, 2.25], 'r-', linewidth=2, alpha=0.8)
+        
+        # Support details
+        support = Rectangle((3.8, 1.5), 0.4, 0.8, facecolor='gray', edgecolor='black', linewidth=1)
+        ax.add_patch(support)
+        
+        # Dimensions
+        ax.annotate('', xy=(0, 1.5), xytext=(4, 1.5), arrowprops=dict(arrowstyle='<->', color='red', lw=2))
+        ax.text(2, 1.3, '4.0m', fontsize=10, ha='center', color='red')
+        
+        ax.annotate('', xy=(4.5, 2), xytext=(4.5, 2.3), arrowprops=dict(arrowstyle='<->', color='blue', lw=1))
+        ax.text(4.7, 2.15, '300mm', fontsize=8, ha='left', color='blue')
+        
+        ax.set_xlim(-0.5, 5.5)
+        ax.set_ylim(1, 3)
+        ax.set_aspect('equal')
+        ax.grid(True, alpha=0.3)
+        ax.set_title('Approach Slab Details')
+        ax.set_xlabel('Length (m)')
+        ax.set_ylabel('Height (m)')
+
 # Sidebar for parameters
 with st.sidebar:
     st.markdown('<div class="section-header">📊 Project Settings</div>', unsafe_allow_html=True)
+    
+    # Bridge parameters
+    st.subheader("Bridge Parameters")
+    bridge_width = st.number_input("Bridge Width (m)", min_value=5.0, max_value=20.0, value=8.0, step=0.5)
+    bridge_length = st.number_input("Bridge Length (m)", min_value=10.0, max_value=100.0, value=30.0, step=1.0)
+    
+    # Abutment parameters
+    st.subheader("Abutment Parameters")
+    abutment_height = st.number_input("Abutment Height (m)", min_value=2.0, max_value=10.0, value=3.5, step=0.5)
+    abutment_width = st.number_input("Abutment Width (m)", min_value=0.5, max_value=3.0, value=0.8, step=0.1)
+    
+    # Approach slab parameters
+    st.subheader("Approach Slab Parameters")
+    approach_slab_length = st.number_input("Approach Slab Length (m)", min_value=2.0, max_value=10.0, value=3.0, step=0.5)
+    approach_slab_thickness = st.number_input("Approach Slab Thickness (mm)", min_value=150, max_value=500, value=300, step=25) / 1000  # Convert to meters
 
     project_name = st.text_input("Project Name", "Highway Bridge Project")
     drawing_title = st.text_input("Drawing Title", "Bridge Elevation & Plan")
@@ -420,9 +590,164 @@ with col2:
         )
 
 # Process uploaded file
+# Initialize the enhanced bridge design
+bridge_design = EnhancedBridgeGAD()
+
+# Set bridge parameters
+bridge_params = {
+    'width': bridge_width,
+    'length': bridge_length,
+    'deck_thickness': 0.5  # meters
+}
+
+# Set abutment parameters
+abutment_params = {
+    'height': abutment_height,
+    'width': abutment_width,
+    'thickness': 0.5  # meters
+}
+
+# Set approach slab parameters
+approach_slab_params = {
+    'length': approach_slab_length,
+    'thickness': approach_slab_thickness,
+    'reinforcement': {}
+}
+
+# Update design object with parameters
+bridge_design.bridge_params = bridge_params
+bridge_design.abutment_params = abutment_params
+bridge_design.approach_slab_params = approach_slab_params
+
+# Create tabs for different views
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📐 Plan View", 
+    "🏗️ Sectional Elevation", 
+    "🧱 Abutment Details", 
+    "🛣️ Approach Slab",
+    "📊 Design Calculations"
+])
+
+with tab1:
+    st.subheader("Bridge Plan View")
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    bridge_design.draw_plan_view(ax1)
+    st.pyplot(fig1)
+
+with tab2:
+    st.subheader("Sectional Elevation")
+    fig2, ax2 = plt.subplots(figsize=(12, 6))
+    bridge_design.draw_sectional_elevation(ax2)
+    st.pyplot(fig2)
+
+with tab3:
+    st.subheader("Abutment Details")
+    fig3, ax3 = plt.subplots(figsize=(8, 8))
+    bridge_design.draw_abutment_details(ax3)
+    st.pyplot(fig3)
+
+with tab4:
+    st.subheader("Approach Slab Design")
+    
+    # Create approach slab design instance
+    approach_slab = ApproachSlabDesign(
+        length=approach_slab_length,
+        width=bridge_width,
+        thickness=approach_slab_thickness
+    )
+    
+    # Calculate and display design parameters
+    design_report = approach_slab.generate_design_report()
+    
+    # Display design parameters in columns
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### Design Parameters")
+        for param, value in design_report['design_parameters'].items():
+            st.text(f"{param.replace('_', ' ').title()}: {value}")
+        
+        st.markdown("### Loads")
+        for load, value in design_report['loads'].items():
+            st.text(f"{load.replace('_', ' ').title()}: {value}")
+    
+    with col2:
+        st.markdown("### Design Moments")
+        for moment, value in design_report['design_moments'].items():
+            st.text(f"{moment.replace('_', ' ').title()}: {value}")
+        
+        st.markdown("### Reinforcement")
+        for item, value in design_report['reinforcement'].items():
+            st.text(f"{item.replace('_', ' ').title()}: {value}")
+    
+    # Show approach slab details
+    st.markdown("### Approach Slab Details")
+    fig4, ax4 = plt.subplots(figsize=(10, 6))
+    bridge_design.draw_approach_slab_details(ax4)
+    st.pyplot(fig4)
+
+with tab5:
+    st.subheader("Design Calculations")
+    
+    # Create design instances
+    abutment_design = AbutmentDesign(
+        bridge_width=bridge_width,
+        bridge_height=bridge_params['deck_thickness'],
+        abutment_height=abutment_height,
+        approach_slab_length=approach_slab_length
+    )
+    
+    approach_slab_design = ApproachSlabDesign(
+        length=approach_slab_length,
+        width=bridge_width,
+        thickness=approach_slab_thickness,
+        reinforcement_details={}
+    )
+    
+    # Calculate loads and reinforcement
+    approach_loads = approach_slab_design.calculate_approach_slab_loads()
+    approach_reinforcement = approach_slab_design.design_reinforcement()
+    
+    # Display results in columns
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### Approach Slab Loads")
+        st.metric("Dead Load", f"{approach_loads['dead_load']:.2f} kN/m²")
+        st.metric("Live Load", f"{approach_loads['live_load']:.2f} kN/m²")
+        st.metric("Total Load", f"{approach_loads['total_load']:.2f} kN/m²")
+    
+    with col2:
+        st.markdown("### Reinforcement Details")
+        st.metric("Required Steel Area", f"{approach_reinforcement['ast_required']:.2f} mm²/m")
+        st.metric("Bar Diameter", f"{approach_reinforcement['bar_diameter']} mm")
+        st.metric("Spacing", f"{approach_reinforcement['spacing']} mm c/c")
+    
+    # Show calculation summary
+    st.markdown("### Design Summary")
+    st.markdown("""
+    - **Abutment Height**: {:.2f} m
+    - **Abutment Width**: {:.2f} m
+    - **Approach Slab Length**: {:.2f} m
+    - **Approach Slab Thickness**: {:.0f} mm
+    
+    The design follows standard bridge engineering practices and includes appropriate
+    factors of safety for both dead and live loads.
+    """.format(
+        abutment_height,
+        abutment_width,
+        approach_slab_length,
+        approach_slab_thickness * 1000  # Convert to mm
+    ))
+
+# File upload section
+st.sidebar.markdown('---')
+st.sidebar.subheader("Import/Export")
+uploaded_file = st.sidebar.file_uploader("Upload Excel File", type=["xlsx"])
+
 if uploaded_file:
     try:
-        # Read parameters
+        # Read parameters from Excel
         df = pd.read_excel(uploaded_file, sheet_name="Sheet1")
         params = dict(zip(df['Variable'], df['Value']))
 
