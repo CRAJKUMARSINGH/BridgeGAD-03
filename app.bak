@@ -1,31 +1,4 @@
 import streamlit as st
-
-# Enhanced coordinate functions
-
-def hpos(ch, left, scale):
-    """Horizontal position calculation - LISP hpos() function"""
-    return (ch - left) * scale
-
-def vpos(rl, datum, scale):
-    """Vertical position calculation - LISP vpos() function"""
-    return (rl - datum) * scale
-
-def h2pos(ch, left, scale2):
-    """Secondary horizontal position - LISP h2pos() function"""
-    return (ch - left) * scale2
-
-def v2pos(rl, datum, scale2):
-    """Secondary vertical position - LISP v2pos() function"""
-    return (rl - datum) * scale2
-
-def calculate_skew_coordinates(x, y, skew_angle):
-    """Calculate coordinates for skewed bridges"""
-    import math
-    skew_rad = math.radians(skew_angle)
-    x_skew = x * math.cos(skew_rad) - y * math.sin(skew_rad)
-    y_skew = x * math.sin(skew_rad) + y * math.cos(skew_rad)
-    return x_skew, y_skew
-
 import pandas as pd
 import ezdxf
 import math
@@ -115,16 +88,15 @@ if uploaded_file is not None or use_default:
                         # Create a new DXF document
                         doc = ezdxf.new("R2010", setup=True)
                         msp = doc.modelspace()
-setup_dxf_layers(doc)
                         
                         # Add drawing elements here (simplified example)
                         # This is where you would integrate the drawing logic from the original script
                         
                         # For now, just add a simple rectangle as a placeholder
-                        msp.add_line((hpos(parameters.get("LEFT", 0), parameters.get("LEFT", 0), parameters.get("SCALE1", 100)), vpos(parameters.get("DATUM", 100), parameters.get("DATUM", 100), parameters.get("SCALE1", 100))), (1000, 0))
+                        msp.add_line((0, 0), (1000, 0))
                         msp.add_line((1000, 0), (1000, 500))
                         msp.add_line((1000, 500), (0, 500))
-                        msp.add_line((0, 500), (hpos(parameters.get("LEFT", 0), parameters.get("LEFT", 0), parameters.get("SCALE1", 100)), vpos(parameters.get("DATUM", 100), parameters.get("DATUM", 100), parameters.get("SCALE1", 100))))
+                        msp.add_line((0, 500), (0, 0))
                         
                         # Save DXF to a temporary file
                         with tempfile.NamedTemporaryFile(delete=False, suffix=".dxf") as tmp:
@@ -181,110 +153,3 @@ st.caption("Bridge Design Generator | Created with Streamlit and ezdxf")
 
 # Note: The actual DXF generation logic from the original script
 # would be integrated as functions here and called when generating the DXF.
-
-
-# Enhanced DXF functions
-
-def setup_dxf_layers(doc):
-    """Setup professional DXF layers"""
-    layers = [
-        ("GRID", 8, "Grid lines and axes"),
-        ("STRUCTURE", 1, "Main structural elements"),
-        ("DIMENSIONS", 6, "Dimension lines and text"),
-        ("ANNOTATIONS", 3, "Text and labels"),
-        ("CENTERLINES", 4, "Center lines"),
-        ("HATCHING", 9, "Section hatching"),
-        ("DETAILS", 2, "Detail elements"),
-        ("FOUNDATION", 5, "Foundation elements")
-    ]
-    
-    for name, color, description in layers:
-        layer = doc.layers.new(name=name)
-        layer.dxf.color = color
-        layer.description = description
-
-def add_bridge_deck(msp, left, right, rtl, ccbr, scale, layer="STRUCTURE"):
-    """Add bridge deck to DXF"""
-    deck_width = ccbr
-    deck_left = left - deck_width/2
-    deck_right = right + deck_width/2
-    
-    # Main deck rectangle
-    deck_points = [
-        (hpos(deck_left, left, scale), vpos(rtl, 100, scale)),
-        (hpos(deck_right, left, scale), vpos(rtl, 100, scale)),
-        (hpos(deck_right, left, scale), vpos(rtl-0.2, 100, scale)),
-        (hpos(deck_left, left, scale), vpos(rtl-0.2, 100, scale))
-    ]
-    
-    msp.add_lwpolyline(deck_points, close=True, dxfattribs={'layer': layer})
-
-def add_pier(msp, ch, datum, rtl, pier_width, scale, layer="STRUCTURE"):
-    """Add pier to DXF"""
-    pier_left = ch - pier_width/2
-    pier_right = ch + pier_width/2
-    
-    pier_points = [
-        (hpos(pier_left, 0, scale), vpos(datum, datum, scale)),
-        (hpos(pier_right, 0, scale), vpos(datum, datum, scale)),
-        (hpos(pier_right, 0, scale), vpos(rtl, datum, scale)),
-        (hpos(pier_left, 0, scale), vpos(rtl, datum, scale))
-    ]
-    
-    msp.add_lwpolyline(pier_points, close=True, dxfattribs={'layer': layer})
-
-
-# Enhanced Excel processing
-
-def process_excel_parameters(file_path):
-    """Enhanced Excel parameter processing"""
-    import pandas as pd
-    
-    try:
-        # Read Excel file with proper encoding
-        df = pd.read_excel(file_path, sheet_name=None, header=None)
-        
-        if 'Sheet1' not in df:
-            raise ValueError("Sheet1 not found in Excel file")
-        
-        # Process parameters
-        df_params = df['Sheet1']
-        
-        # Handle different Excel formats
-        if len(df_params.columns) >= 3:
-            df_params.columns = ['Value', 'Variable', 'Description']
-        else:
-            df_params.columns = ['Variable', 'Value']
-        
-        # Convert to dictionary
-        parameters = dict(zip(df_params['Variable'], df_params['Value']))
-        
-        # Validate essential parameters
-        required_params = ['SCALE1', 'DATUM', 'LEFT', 'RIGHT', 'RTL', 'NSPAN']
-        missing_params = [p for p in required_params if p not in parameters]
-        
-        if missing_params:
-            print(f"Warning: Missing parameters: {missing_params}")
-            
-        return parameters
-        
-    except Exception as e:
-        print(f"Error processing Excel file: {e}")
-        return create_default_parameters()
-
-def create_default_parameters():
-    """Create default parameters if Excel processing fails"""
-    return {
-        'SCALE1': 100,
-        'SCALE2': 50, 
-        'SKEW': 0,
-        'DATUM': 100,
-        'LEFT': 0,
-        'RIGHT': 100,
-        'RTL': 105,
-        'SOFL': 103,
-        'NSPAN': 3,
-        'LBRIDGE': 30,
-        'CCBR': 7.5,
-        'PIERTW': 0.8
-    }
