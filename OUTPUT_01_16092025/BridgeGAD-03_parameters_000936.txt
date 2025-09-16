@@ -1,0 +1,42 @@
+BridgeGAD-03 Test Results
+==============================
+Test Date: 2025-09-17 00:09:36
+
+Bridge Parameters:
+  SCALE1: 100.0
+  SCALE2: 50.0
+  SKEW: 0.0
+  DATUM: 100.0
+  TOPRL: 0.0
+  LEFT: 0.0
+  RIGHT: 100.0
+  XINCR: 10.0
+  YINCR: 1.0
+  NOCH: 11.0
+  NSPAN: 3.0
+  LBRIDGE: 30.0
+  ABTL: 0.0
+  RTL: 105.0
+  SOFL: 103.0
+  KERBW: 0.3
+  KERBD: 0.2
+  CCBR: 7.5
+  SLBTHC: 0.2
+  SLBTHE: 0.3
+  SLBTHT: 0.25
+  CAPT: 104.0
+  CAPB: 102.0
+  CAPW: 1.2
+  PIERTW: 0.8
+  BATTR: 6.0
+  PIERST: 2.0
+  PIERN: 1.0
+  SPAN1: 10.0
+  FUTRL: 98.0
+  FUTD: 1.0
+  FUTW: 2.5
+  FUTL: 3.0
+  LASLAB: 3.0
+  APWTH: 8.5
+  APTHK: 0.2
+  WCTH: 0.05
